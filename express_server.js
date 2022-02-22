@@ -56,28 +56,39 @@ const getUserIdFromEmail = (email, users) => {
   return false;
 };
 
+const checkLoggedIn = (req) => {
+  return req.cookies["user_id"] !== undefined;
+}
+
 app.get("/", (req, res) => {
   res.redirect("/urls");
 });
 
 app.get("/urls", (req, res) => {
   // console.log(req.cookies);
+  // console.log(checkLoggedIn(req));
   const email = getUserEmail(users, req);
   const templateVars = {
     urls: urlDatabase,
     username: email
   };
-  console.log("templateVars", templateVars);
-  console.log("users", users);
+  // console.log("templateVars", templateVars);
+  // console.log("users", users);
 
   res.render("urls_index", templateVars);
 });
 app.get("/urls/new", (req, res) => {
-  const email = getUserEmail(users, req);
-  const templateVars = {
-    username: email
+  if (!checkLoggedIn(req)) {
+    res.statusCode = 401;
+    res.redirect("/login");
+  } else {
+    const email = getUserEmail(users, req);
+    const templateVars = {
+      username: email
+    }
+    res.render("urls_new", templateVars);
   }
-  res.render("urls_new", templateVars);
+  
 });
 
 app.post("/urls", (req, res) => {
