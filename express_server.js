@@ -50,8 +50,8 @@ app.get("/urls", (req, res) => {
     urls: urlDatabase,
     username: email
   };
-  // console.log("templateVars", templateVars);
-  // console.log("users", users);
+  console.log("templateVars", templateVars);
+  console.log("users", users);
 
   res.render("urls_index", templateVars);
 });
@@ -124,14 +124,33 @@ app.get("/register", (req, res) => {
 });
 
 app.post("/register", (req, res) => {
-  const userRandomID = generateRandomString(6);
-  users[userRandomID] = {
-    id: userRandomID,
-    email: req.body.email,
-    password: req.body.password
+  const checkUserExist = (email, users) => {
+    for (let user in users) {
+      if (users[user].email === email) {
+        return true;
+      }
+    }
+    return false;
   };
-  res.cookie("username", userRandomID);
-  res.redirect("/urls");
+  if (req.body.email === "") {
+    res.statusCode = 400;
+    res.end("You need to enter an email");
+  } else if (req.body.password === "") {
+    res.statusCode = 400;
+    res.end("You need to enter an password");
+  } else if (checkUserExist(req.body.email, users)) {
+    res.statusCode = 400;
+    res.end("User already exists");
+  } else {
+    const userRandomID = generateRandomString(6);
+    users[userRandomID] = {
+      id: userRandomID,
+      email: req.body.email,
+      password: req.body.password
+    };
+    res.cookie("username", userRandomID);
+    res.redirect("/urls");
+  }
 });
 
 // app.get("/urls.json", (req, res) => {
