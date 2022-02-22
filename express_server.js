@@ -35,9 +35,26 @@ function generateRandomString(nums) {
 };
 
 function getUserEmail(users, req) {
-  return users[req.cookies["username"]] ? users[req.cookies["username"]].email : undefined;
+  return users[req.cookies["user_id"]] ? users[req.cookies["user_id"]].email : undefined;
 };
 
+const checkUserExistFromEmail = (email, users) => {
+  for (let user in users) {
+    if (users[user].email === email) {
+      return true;
+    }
+  }
+  return false;
+};
+
+const getUserIdFromEmail = (email, users) => {
+  for (let user in users) {
+    if (users[user].email === email) {
+      return user;
+    }
+  }
+  return false;
+};
 
 app.get("/", (req, res) => {
   res.redirect("/urls");
@@ -103,13 +120,37 @@ app.get("/u/:shortURL", (req,res) => {
   res.redirect(longURL);
 });
 
+app.get("/login", (req, res) => {
+  const email = getUserEmail(users, req);
+  const templateVars = {
+    shortURL: req.params.shortURL, 
+    longURL: urlDatabase[req.params.shortURL],
+    username: email
+  };
+  res.render("login", templateVars);
+});
+
 app.post("/login", (req, res) => {
-  res.cookie("username", req.body.username);
+  console.log("users", users);
+  if (checkUserExistFromEmail(req.body.email, users) ){
+    const userId = getUserIdFromEmail(req.body.email, users);
+    if (users[userId].password === req.body.password) {
+      res.cookie("user_id", userId);
+    } else {
+      res.statusCode = 403;
+      res.end("Password does not match");
+    }
+  } else {
+    res.statusCode = 403;
+    res.end("User email does not exist")
+  }
+  
+  
   res.redirect("/urls");
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("username");
+  res.clearCookie("user_id");
   res.redirect("/urls");
 });
 
@@ -124,21 +165,14 @@ app.get("/register", (req, res) => {
 });
 
 app.post("/register", (req, res) => {
-  const checkUserExist = (email, users) => {
-    for (let user in users) {
-      if (users[user].email === email) {
-        return true;
-      }
-    }
-    return false;
-  };
+  
   if (req.body.email === "") {
     res.statusCode = 400;
     res.end("You need to enter an email");
   } else if (req.body.password === "") {
     res.statusCode = 400;
     res.end("You need to enter an password");
-  } else if (checkUserExist(req.body.email, users)) {
+  } else if (checkUserExistFromEmail(req.body.email, users)) {
     res.statusCode = 400;
     res.end("User already exists");
   } else {
@@ -148,7 +182,7 @@ app.post("/register", (req, res) => {
       email: req.body.email,
       password: req.body.password
     };
-    res.cookie("username", userRandomID);
+    res.cookie("user_id", userRandomID);
     res.redirect("/urls");
   }
 });
