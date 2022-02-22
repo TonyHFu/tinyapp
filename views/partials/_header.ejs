@@ -12,22 +12,23 @@
     </div>
     <% if (username !== undefined) { %>
       <span class="navbar-text" style="color:black">
-       Logged in as <%= username %>
+       Logged in as <%= username  %>
       </span>
       <form method="POST" action="/logout" class="form-inline">
         <button class="btn btn-outline-primary my-2 my-sm-0" type="submit">Logout</button>
       </form>
     <% } else { %>
       <form method="POST" action="/login" class="form-inline">
-        <label for="username">Username</label>
+        <label for="username">Username: </label>
         <input class="form-control mr-sm-2" id="username" name="username">
         <button class="btn btn-outline-primary my-2 my-sm-0" type="submit">Login</button>
       </form>
     <% } %>
-      <form method="GET" action="/register" class="form-inline">
-        <button class="btn btn-outline-primary" type="submit">
+      <a href="/register">
+        <button class="btn btn-primary" type="submit">
           Register
         </button>
-      </form>
+      </a>
+      
   </nav>
 </header>

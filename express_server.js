@@ -34,22 +34,31 @@ function generateRandomString(nums) {
   return randomString;
 };
 
+function getUserEmail(users, req) {
+  return users[req.cookies["username"]] ? users[req.cookies["username"]].email : undefined;
+};
+
+
 app.get("/", (req, res) => {
   res.redirect("/urls");
 });
 
 app.get("/urls", (req, res) => {
   // console.log(req.cookies);
-  
+  const email = getUserEmail(users, req);
   const templateVars = {
     urls: urlDatabase,
-    username: req.cookies["username"]
+    username: email
   };
+  // console.log("templateVars", templateVars);
+  // console.log("users", users);
+
   res.render("urls_index", templateVars);
 });
 app.get("/urls/new", (req, res) => {
+  const email = getUserEmail(users, req);
   const templateVars = {
-    username: req.cookies["username"]
+    username: email
   }
   res.render("urls_new", templateVars);
 });
@@ -69,10 +78,11 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 
 app.get("/urls/:shortURL", (req, res) => {
+  const email = getUserEmail(users, req);
   const templateVars = {
     shortURL: req.params.shortURL, 
     longURL: urlDatabase[req.params.shortURL],
-    username: req.cookies["username"]
+    username: email
   };
   res.render("urls_show", templateVars);
 });
@@ -104,10 +114,11 @@ app.post("/logout", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
+  const email = getUserEmail(users, req);
   const templateVars = {
     shortURL: req.params.shortURL, 
     longURL: urlDatabase[req.params.shortURL],
-    username: req.cookies["username"]
+    username: email
   };
   res.render("register", templateVars);
 });
@@ -119,8 +130,8 @@ app.post("/register", (req, res) => {
     email: req.body.email,
     password: req.body.password
   };
-  console.log(users);
-  res.render("register", templateVars);
+  res.cookie("username", userRandomID);
+  res.redirect("/urls");
 });
 
 // app.get("/urls.json", (req, res) => {
