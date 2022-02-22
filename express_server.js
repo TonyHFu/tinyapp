@@ -22,7 +22,11 @@ const urlDatabase = {
 };
 
 const users = {
-
+  "abcdef": {
+    id: "abcef",
+    email: "admin@me.com",
+    password: "0000"
+  }
 };
 
 function generateRandomString(nums) {
@@ -79,6 +83,9 @@ const getUserURLs = (user_id, urlDatabase) => {
   return userURLs;
 };
 
+const checkUserOwnShortURL = (req, urlDatabase, shortURL) => {
+ return urlDatabase[shortURL].userID === req.cookies.user_id;
+};
 
 app.get("/", (req, res) => {
   res.redirect("/urls");
@@ -135,20 +142,31 @@ app.post("/urls", (req, res) => {
   
 });
 
-app.post("/urls/:shortURL/delete", (req, res) => {
-  delete urlDatabase[req.params.shortURL];
-  res.redirect("/urls");
+app.get("/urls/:shortURL", (req, res) => {
+  if (checkUserOwnShortURL(req, urlDatabase, req.params.shortURL)) {
+    const email = getUserEmail(users, req);
+    const templateVars = {
+      shortURL: req.params.shortURL, 
+      longURL: urlDatabase[req.params.shortURL].longURL,
+      username: email
+    };
+    res.render("urls_show", templateVars);
+  } else {
+    res.statusCode = 401;
+    res.end("You do not have permission to access this short url");
+  }
+
+  
 });
 
-
-app.get("/urls/:shortURL", (req, res) => {
-  const email = getUserEmail(users, req);
-  const templateVars = {
-    shortURL: req.params.shortURL, 
-    longURL: urlDatabase[req.params.shortURL].longURL,
-    username: email
-  };
-  res.render("urls_show", templateVars);
+app.post("/urls/:shortURL/delete", (req, res) => {
+  if (checkUserOwnShortURL(req, urlDatabase, req.params.shortURL)) {
+    delete urlDatabase[req.params.shortURL];
+    res.redirect("/urls");
+  } else {
+    res.statusCode = 401;
+    res.end("You do not own this short URL");
+  }
 });
 
 app.post("/urls/:shortURL", (req, res) => {
@@ -156,14 +174,20 @@ app.post("/urls/:shortURL", (req, res) => {
 });
 
 app.post("/urls/:shortURL/edit", (req, res) => {
-  const existingLongURL = urlDatabase[req.params.shortURL].longURL; 
-  urlDatabase[req.body.newURL] = {
-    longURL: existingLongURL,
-    userID: req.cookies["user_id"]
-  };
-  delete urlDatabase[req.params.shortURL]
-  // console.log(urlDatabase);
-  res.redirect("/urls");
+  
+  if (checkUserOwnShortURL(req, urlDatabase, req.params.shortURL)) {
+    const existingLongURL = urlDatabase[req.params.shortURL].longURL; 
+    urlDatabase[req.body.newURL] = {
+      longURL: existingLongURL,
+      userID: req.cookies["user_id"]
+    };
+    delete urlDatabase[req.params.shortURL]
+    // console.log(urlDatabase);
+    res.redirect("/urls");
+  } else {
+    res.statusCode = 401;
+    res.end("You do not own this short URL");
+  }
 });
 
 app.get("/u/:shortURL", (req,res) => {
