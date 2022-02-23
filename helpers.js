@@ -70,6 +70,18 @@ const checkURLExist = (req, urlDatabase) => {
   return req.params.shortURL in urlDatabase;
 };
 
+const createShortURL = (longURL, urlDatabase, user_id) => {
+  const shortURL = generateRandomString(6);
+  while(shortURL in urlDatabase) {
+    shortURL = generateRandomString(6);
+  }
+  urlDatabase[shortURL] = {
+    longURL: longURL,
+    userID: user_id
+  };
+  
+};
+
 module.exports = {
   generateRandomString,
   getUserEmail,
@@ -79,5 +91,6 @@ module.exports = {
   getUserURLs,
   checkUserOwnShortURL,
   checkURLExist,
-  getUserByEmail
+  getUserByEmail,
+  createShortURL
 }

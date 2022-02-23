@@ -4,6 +4,18 @@ const bodyParser = require("body-parser");
 const morgan = require("morgan");
 const bcrypt = require('bcryptjs');
 const cookieSession = require('cookie-session')
+const {
+  generateRandomString,
+  getUserEmail,
+  checkUserExistFromEmail,
+  getUserIdFromEmail,
+  checkLoggedIn,
+  getUserURLs,
+  checkUserOwnShortURL,
+  checkURLExist,
+  getUserByEmail,
+  createShortURL
+} = require("./helpers.js");
 
 const urlDatabase = {
   "b2xVn2": {
@@ -20,24 +32,13 @@ const users = {
   "abcdef": {
     id: "abcef",
     email: "admin@me.com",
-    password: "0000"
+    password: '$2a$10$8dSIPxTcar9ytSyN/TuUV.nct8sadHEi7ZfoLJ2jHwW1DxfduVT8q'
   }
 };
 
 const app = express();
 const PORT = 8080;
 
-const {
-  generateRandomString,
-  getUserEmail,
-  checkUserExistFromEmail,
-  getUserIdFromEmail,
-  checkLoggedIn,
-  getUserURLs,
-  checkUserOwnShortURL,
-  checkURLExist,
-  getUserByEmail
-} = require("./helpers.js");
 
 
 
@@ -48,9 +49,7 @@ app.use(morgan("dev"));
 app.use(cookieSession({
   name: 'session',
   keys: ["This is for tinyapp from LHL"],
-
-  // Cookie Options
-  maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  maxAge: 24 * 60 * 60 * 1000 
 }));
 
 
@@ -72,101 +71,91 @@ app.get("/urls", (req, res) => {
   // console.log("templateVars", templateVars);
   // console.log("users", users);
 
-  res.render("urls_index", templateVars);
+  return res.render("urls_index", templateVars);
 });
 app.get("/urls/new", (req, res) => {
   if (!checkLoggedIn(req, users)) {
     res.statusCode = 401;
-    res.redirect("/login");
-  } else {
-    const email = getUserEmail(users, req);
-    const templateVars = {
-      username: email
-    }
-    res.render("urls_new", templateVars);
+    return res.redirect("/login");
+  } 
+  const email = getUserEmail(users, req);
+  const templateVars = {
+    username: email
   }
-  
+  return res.render("urls_new", templateVars);
 });
 
 app.post("/urls", (req, res) => {
   if (!checkLoggedIn(req, users)) {
     res.statusCode = 401;
-    res.end("You are not logged in");
-  } else {
-    // console.log(req.body);
-    const longURL = req.body.longURL;
-    const shortURL = generateRandomString(6);
-    if (urlDatabase[shortURL]) {
-      urlDatabase[shortURL].longURL = longURL;
-    } else {
-      urlDatabase[shortURL] = {
-        longURL: longURL,
-        userID: req.session.user_id
-      }
-    }
-    res.redirect("/urls/" + shortURL);
-  }
+    return res.end("You are not logged in");
+  } 
+  // console.log(req.body);
+  const longURL = req.body.longURL;
+  const shortURL = generateRandomString(6);
+
+  createShortURL(longURL, urlDatabase, req.session.user_id);
+
+  return res.redirect("/urls/" + shortURL);
+  
   
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  if (checkURLExist(req, urlDatabase)) {
-    if (checkUserOwnShortURL(req, urlDatabase, req.params.shortURL)) {
-      const email = getUserEmail(users, req);
-      const templateVars = {
-        shortURL: req.params.shortURL, 
-        longURL: urlDatabase[req.params.shortURL].longURL,
-        username: email
-      };
-      res.render("urls_show", templateVars);
-    } else {
-      res.statusCode = 401;
-      res.end("You do not have permission to access this short url");
-    }
-  } else {
+  if (!checkURLExist(req, urlDatabase)) {
     res.statusCode = 404;
-    res.end("This shortened URL is not registered");
+    return res.end("This shortened URL is not registered");
   }
+
+  if (!checkUserOwnShortURL(req, urlDatabase, req.params.shortURL)) {
+    res.statusCode = 401;
+    return res.end("You do not have permission to access this short url");
+  }
+
+  const email = getUserEmail(users, req);
+  const templateVars = {
+    shortURL: req.params.shortURL, 
+    longURL: urlDatabase[req.params.shortURL].longURL,
+    username: email
+  };
+  return res.render("urls_show", templateVars);
+    
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
-  if (checkURLExist(req, urlDatabase)) {
-    if (checkUserOwnShortURL(req, urlDatabase, req.params.shortURL)) {
-      delete urlDatabase[req.params.shortURL];
-      res.redirect("/urls");
-    } else {
-      res.statusCode = 401;
-      res.end("You do not own this short URL");
-    }
-  } else {
+  if (!checkURLExist(req, urlDatabase)) {
     res.statusCode = 404;
-    res.end("This shortened URL is not registered");
+    return res.end("This shortened URL is not registered");
   }
-});
+  if (!checkUserOwnShortURL(req, urlDatabase, req.params.shortURL)) {
+    res.statusCode = 401;
+    return res.end("You do not own this short URL");
+  }
 
-app.post("/urls/:shortURL", (req, res) => {
-  res.redirect(req.url);
+  delete urlDatabase[req.params.shortURL];
+  return res.redirect("/urls");
+    
 });
 
 app.post("/urls/:shortURL/edit", (req, res) => {
-  if (checkURLExist(req, urlDatabase)) {
-    if (checkUserOwnShortURL(req, urlDatabase, req.params.shortURL)) {
-      const existingLongURL = urlDatabase[req.params.shortURL].longURL; 
-      urlDatabase[req.body.newURL] = {
-        longURL: existingLongURL,
-        userID: req.session.user_id
-      };
-      delete urlDatabase[req.params.shortURL]
-      // console.log(urlDatabase);
-      res.redirect("/urls");
-    } else {
-      res.statusCode = 401;
-      res.end("You do not own this short URL");
-    }
-  } else {
+  if (!checkURLExist(req, urlDatabase)) {
     res.statusCode = 404;
-    res.end("This shortened URL is not registered");
+    return res.end("This shortened URL is not registered");
   }
+  if (!checkUserOwnShortURL(req, urlDatabase, req.params.shortURL)) {
+    res.statusCode = 401;
+    return res.end("You do not own this short URL");
+  }
+  
+  const existingLongURL = urlDatabase[req.params.shortURL].longURL; 
+  urlDatabase[req.body.newURL] = {
+    longURL: existingLongURL,
+    userID: req.session.user_id
+  };
+  delete urlDatabase[req.params.shortURL]
+  // console.log(urlDatabase);
+  return res.redirect("/urls");
+    
 });
 
 app.get("/u/:shortURL", (req,res) => {
