@@ -119,7 +119,7 @@ app.get("/urls/:shortURL", (req, res) => {
     return res.end("You need to login to do this");
   }
   
-  if (!checkURLExist(req, urlDatabase)) {
+  if (!checkURLExist(req.params.shortURL, urlDatabase)) {
     res.statusCode = 404;
     return res.end("This shortened URL is not registered");
   }
@@ -140,7 +140,7 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
-  if (!checkURLExist(req, urlDatabase)) {
+  if (!checkURLExist(req.params.shortURL, urlDatabase)) {
     res.statusCode = 404;
     return res.end("This shortened URL is not registered");
   }
@@ -159,7 +159,7 @@ app.post("/urls/:shortURL", (req, res) => {
     res.statusCode = 400;
     return res.end("You need to enter a new short URL");
   }
-  if (!checkURLExist(req, urlDatabase)) {
+  if (!checkURLExist(req.params.shortURL, urlDatabase)) {
     res.statusCode = 404;
     return res.end("This shortened URL is not registered");
   }
@@ -178,6 +178,10 @@ app.post("/urls/:shortURL", (req, res) => {
 });
 
 app.get("/u/:shortURL", (req,res) => {
+  if(!checkURLExist(req.params.shortURL, urlDatabase)) {
+    res.statusCode = 404;
+    return res.end("Sorry, this short URL is not registered");
+  }
   const longURL = urlDatabase[req.params.shortURL].longURL;
   res.redirect(longURL);
 });

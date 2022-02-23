@@ -71,8 +71,8 @@ const checkUserOwnShortURL = (req, urlDatabase, shortURL) => {
  return urlDatabase[shortURL].userID === req.session.user_id;
 };
 
-const checkURLExist = (req, urlDatabase) => {
-  return req.params.shortURL in urlDatabase;
+const checkURLExist = (shortURL, urlDatabase) => {
+  return shortURL in urlDatabase;
 };
 
 const createShortURL = (longURL, urlDatabase, user_id) => {
