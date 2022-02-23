@@ -5,23 +5,6 @@ const morgan = require("morgan");
 const bcrypt = require('bcryptjs');
 const cookieSession = require('cookie-session')
 
-
-const app = express();
-const PORT = 8080;
-
-
-app.set("view engine", "ejs");
-app.use(bodyParser.urlencoded({extended: true}));
-// app.use(cookieParser());
-app.use(morgan("dev"));
-app.use(cookieSession({
-  name: 'session',
-  keys: ["This is for tinyapp from LHL"],
-
-  // Cookie Options
-  maxAge: 24 * 60 * 60 * 1000 // 24 hours
-}));
-
 const urlDatabase = {
   "b2xVn2": {
     longURL: "http://www.lighthouselabs.ca",
@@ -41,67 +24,34 @@ const users = {
   }
 };
 
-function generateRandomString(nums) {
-  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let randomString = '';
-  for (let i = 0; i < nums; i++) {
-    const letterCase = Math.round(Math.random());
-    const randomLetter = alphabet[Math.floor(Math.random() * 36)];
-    if (letterCase) {
-      randomString += randomLetter.toLowerCase();
-    } else {
-      randomString += randomLetter;
-    }
-  }
-  return randomString;
-};
+const app = express();
+const PORT = 8080;
 
-function getUserEmail(users, req) {
-  return users[req.session.user_id] ? users[req.session.user_id].email : undefined;
-};
+const {
+  generateRandomString,
+  getUserEmail,
+  checkUserExistFromEmail,
+  getUserIdFromEmail,
+  checkLoggedIn,
+  getUserURLs,
+  checkUserOwnShortURL,
+  checkURLExist
+} = require("./helpers.js");
 
-const checkUserExistFromEmail = (email, users) => {
-  for (let user in users) {
-    if (users[user].email === email) {
-      return true;
-    }
-  }
-  return false;
-};
 
-const getUserIdFromEmail = (email, users) => {
-  for (let user in users) {
-    if (users[user].email === email) {
-      return user;
-    }
-  }
-  return false;
-};
 
-const checkLoggedIn = (req) => {
-  return Object.keys(users).includes(req.session.user_id);
-};
+app.set("view engine", "ejs");
+app.use(bodyParser.urlencoded({extended: true}));
+// app.use(cookieParser());
+app.use(morgan("dev"));
+app.use(cookieSession({
+  name: 'session',
+  keys: ["This is for tinyapp from LHL"],
 
-const getUserURLs = (user_id, urlDatabase) => {
-  const userURLs = {};
-  for (let shortURL in urlDatabase) {
-    if (urlDatabase[shortURL].userID === user_id) {
-      userURLs[shortURL] = {
-        longURL: urlDatabase[shortURL].longURL,
-        userID: user_id
-      };
-    }
-  }
-  return userURLs;
-};
+  // Cookie Options
+  maxAge: 24 * 60 * 60 * 1000 // 24 hours
+}));
 
-const checkUserOwnShortURL = (req, urlDatabase, shortURL) => {
- return urlDatabase[shortURL].userID === req.session.user_id;
-};
-
-const checkURLExist = (req, urlDatabase) => {
-  return req.params.shortURL in urlDatabase;
-};
 
 app.get("/", (req, res) => {
   res.redirect("/urls");
@@ -112,7 +62,7 @@ app.get("/urls", (req, res) => {
   // console.log(checkLoggedIn(req));
   const userURLs = getUserURLs(req.session.user_id, urlDatabase);
   const email = getUserEmail(users, req);
-  const loggedIn = checkLoggedIn(req);
+  const loggedIn = checkLoggedIn(req, users);
   const templateVars = {
     urls: userURLs,
     username: email,
@@ -124,7 +74,7 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 app.get("/urls/new", (req, res) => {
-  if (!checkLoggedIn(req)) {
+  if (!checkLoggedIn(req, users)) {
     res.statusCode = 401;
     res.redirect("/login");
   } else {
@@ -138,7 +88,7 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  if (!checkLoggedIn(req)) {
+  if (!checkLoggedIn(req, users)) {
     res.statusCode = 401;
     res.end("You are not logged in");
   } else {
