@@ -2,6 +2,9 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const cookieParser = require('cookie-parser');
 const morgan = require("morgan");
+const bcrypt = require('bcryptjs');
+
+
 const app = express();
 const PORT = 8080;
 
@@ -87,6 +90,10 @@ const checkUserOwnShortURL = (req, urlDatabase, shortURL) => {
  return urlDatabase[shortURL].userID === req.cookies.user_id;
 };
 
+const checkURLExist = (req, urlDatabase) => {
+  return req.params.shortURL in urlDatabase;
+};
+
 app.get("/", (req, res) => {
   res.redirect("/urls");
 });
@@ -143,29 +150,38 @@ app.post("/urls", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  if (checkUserOwnShortURL(req, urlDatabase, req.params.shortURL)) {
-    const email = getUserEmail(users, req);
-    const templateVars = {
-      shortURL: req.params.shortURL, 
-      longURL: urlDatabase[req.params.shortURL].longURL,
-      username: email
-    };
-    res.render("urls_show", templateVars);
+  if (checkURLExist(req, urlDatabase)) {
+    if (checkUserOwnShortURL(req, urlDatabase, req.params.shortURL)) {
+      const email = getUserEmail(users, req);
+      const templateVars = {
+        shortURL: req.params.shortURL, 
+        longURL: urlDatabase[req.params.shortURL].longURL,
+        username: email
+      };
+      res.render("urls_show", templateVars);
+    } else {
+      res.statusCode = 401;
+      res.end("You do not have permission to access this short url");
+    }
   } else {
-    res.statusCode = 401;
-    res.end("You do not have permission to access this short url");
+    res.statusCode = 404;
+    res.end("This shortened URL is not registered");
   }
-
-  
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
-  if (checkUserOwnShortURL(req, urlDatabase, req.params.shortURL)) {
-    delete urlDatabase[req.params.shortURL];
-    res.redirect("/urls");
+  if (checkURLExist(req, urlDatabase)) {
+
+    if (checkUserOwnShortURL(req, urlDatabase, req.params.shortURL)) {
+      delete urlDatabase[req.params.shortURL];
+      res.redirect("/urls");
+    } else {
+      res.statusCode = 401;
+      res.end("You do not own this short URL");
+    }
   } else {
-    res.statusCode = 401;
-    res.end("You do not own this short URL");
+    res.statusCode = 404;
+    res.end("This shortened URL is not registered");
   }
 });
 
@@ -174,19 +190,23 @@ app.post("/urls/:shortURL", (req, res) => {
 });
 
 app.post("/urls/:shortURL/edit", (req, res) => {
-  
-  if (checkUserOwnShortURL(req, urlDatabase, req.params.shortURL)) {
-    const existingLongURL = urlDatabase[req.params.shortURL].longURL; 
-    urlDatabase[req.body.newURL] = {
-      longURL: existingLongURL,
-      userID: req.cookies["user_id"]
-    };
-    delete urlDatabase[req.params.shortURL]
-    // console.log(urlDatabase);
-    res.redirect("/urls");
+  if (checkURLExist(req, urlDatabase)) {
+    if (checkUserOwnShortURL(req, urlDatabase, req.params.shortURL)) {
+      const existingLongURL = urlDatabase[req.params.shortURL].longURL; 
+      urlDatabase[req.body.newURL] = {
+        longURL: existingLongURL,
+        userID: req.cookies["user_id"]
+      };
+      delete urlDatabase[req.params.shortURL]
+      // console.log(urlDatabase);
+      res.redirect("/urls");
+    } else {
+      res.statusCode = 401;
+      res.end("You do not own this short URL");
+    }
   } else {
-    res.statusCode = 401;
-    res.end("You do not own this short URL");
+    res.statusCode = 404;
+    res.end("This shortened URL is not registered");
   }
 });
 
@@ -211,7 +231,7 @@ app.post("/login", (req, res) => {
   console.log("users", users);
   if (checkUserExistFromEmail(req.body.email, users) ){
     const userId = getUserIdFromEmail(req.body.email, users);
-    if (users[userId].password === req.body.password) {
+    if (bcrypt.compareSync(users[userId].password, req.body.password)) {
       res.cookie("user_id", userId);
     } else {
       res.statusCode = 403;
@@ -257,7 +277,7 @@ app.post("/register", (req, res) => {
     users[userRandomID] = {
       id: userRandomID,
       email: req.body.email,
-      password: req.body.password
+      password: bcrypt.hashSync(req.body.password, 10)
     };
     res.cookie("user_id", userRandomID);
     res.redirect("/urls");
