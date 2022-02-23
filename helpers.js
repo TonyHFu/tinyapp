@@ -91,8 +91,8 @@ const createShortURL = (longURL, urlDatabase, user_id) => {
 
 const checkUserOwnLongURL = (user_id, longURL,  urlDatabase) => {
   const userURLs = getUserURLs(user_id, urlDatabase);
-  for (let url in urlDatabase) {
-    if (urlDatabase[url].longURL === longURL) {
+  for (let url in userURLs) {
+    if (userURLs[url].longURL === longURL) {
       return true;
     }
   }

@@ -3,6 +3,8 @@ const bodyParser = require("body-parser");
 // const cookieParser = require('cookie-parser');
 const morgan = require("morgan");
 const cookieSession = require('cookie-session')
+const bcrypt = require('bcryptjs');
+
 const {
   generateRandomString,
   getUserEmail,
@@ -56,7 +58,10 @@ app.use(cookieSession({
 
 
 app.get("/", (req, res) => {
-  res.redirect("/urls");
+  if (checkLoggedIn(req, users)) {
+    return res.redirect("/urls");
+  }
+  return res.redirect("/login");
 });
 
 app.get("/urls", (req, res) => {
@@ -108,6 +113,12 @@ app.post("/urls", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
+  
+  if(!checkLoggedIn(req, users)) {
+    res.statusCode = 401;
+    return res.end("You need to login to do this");
+  }
+  
   if (!checkURLExist(req, urlDatabase)) {
     res.statusCode = 404;
     return res.end("This shortened URL is not registered");
@@ -127,9 +138,7 @@ app.get("/urls/:shortURL", (req, res) => {
   return res.render("urls_show", templateVars);
     
 });
-app.post("/urls/:shortURL", (req, res) => {
-  return res.redirect(req.url);
-});
+
 app.post("/urls/:shortURL/delete", (req, res) => {
   if (!checkURLExist(req, urlDatabase)) {
     res.statusCode = 404;
@@ -145,7 +154,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
     
 });
 
-app.post("/urls/:shortURL/edit", (req, res) => {
+app.post("/urls/:shortURL", (req, res) => {
   if (!req.body.newURL) {
     res.statusCode = 400;
     return res.end("You need to enter a new short URL");
@@ -162,7 +171,7 @@ app.post("/urls/:shortURL/edit", (req, res) => {
     res.statusCode = 405;
     return res.end("You already have this short URL for a different long URL");
   }
-   editShortURL(req.params.shortURL, urlDatabase, req.session.user_id, req.body.newURL);
+  editShortURL(req.params.shortURL, urlDatabase, req.session.user_id, req.body.newURL);
   // console.log(urlDatabase);
   return res.redirect("/urls");
     
@@ -176,10 +185,13 @@ app.get("/u/:shortURL", (req,res) => {
 app.get("/login", (req, res) => {
   // console.log(users);
   // const email = getUserEmail(users, req);
+  if (checkLoggedIn(req, users)) {
+    return res.redirect("/urls");
+  }
   const templateVars = {
     username: undefined
   };
-  res.render("login", templateVars);
+  return res.render("login", templateVars);
 });
 
 app.post("/login", (req, res) => {
