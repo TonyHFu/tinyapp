@@ -1,3 +1,5 @@
+const bcrypt = require('bcryptjs');
+
 function generateRandomString(nums) {
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let randomString = '';
@@ -63,6 +65,9 @@ const getUserURLs = (user_id, urlDatabase) => {
 };
 
 const checkUserOwnShortURL = (req, urlDatabase, shortURL) => {
+  if (! (shortURL in urlDatabase)) {
+    return false;
+  }
  return urlDatabase[shortURL].userID === req.session.user_id;
 };
 
@@ -80,6 +85,37 @@ const createShortURL = (longURL, urlDatabase, user_id) => {
     userID: user_id
   };
   
+  return shortURL;
+  
+};
+
+const checkUserOwnLongURL = (user_id, longURL,  urlDatabase) => {
+  const userURLs = getUserURLs(user_id, urlDatabase);
+  for (let url in urlDatabase) {
+    if (urlDatabase[url].longURL === longURL) {
+      return true;
+    }
+  }
+  return false;
+};
+
+const editShortURL = (shortURL, urlDatabase, user_id, newURL) => {
+  const existingLongURL = urlDatabase[shortURL].longURL;
+  urlDatabase[newURL] = {
+    longURL: existingLongURL,
+    userID: user_id
+  };
+  delete urlDatabase[shortURL];
+};
+
+const createNewUser = (email, password, users) => {
+  const userRandomID = generateRandomString(6);
+  users[userRandomID] = {
+    id: userRandomID,
+    email: email,
+    password: bcrypt.hashSync(password, 10)
+  };
+  return userRandomID;
 };
 
 module.exports = {
@@ -92,5 +128,8 @@ module.exports = {
   checkUserOwnShortURL,
   checkURLExist,
   getUserByEmail,
-  createShortURL
+  createShortURL,
+  checkUserOwnLongURL,
+  editShortURL,
+  createNewUser
 }

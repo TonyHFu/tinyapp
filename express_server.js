@@ -2,7 +2,6 @@ const express = require("express");
 const bodyParser = require("body-parser");
 // const cookieParser = require('cookie-parser');
 const morgan = require("morgan");
-const bcrypt = require('bcryptjs');
 const cookieSession = require('cookie-session')
 const {
   generateRandomString,
@@ -14,7 +13,10 @@ const {
   checkUserOwnShortURL,
   checkURLExist,
   getUserByEmail,
-  createShortURL
+  createShortURL,
+  checkUserOwnLongURL,
+  editShortURL,
+  createNewUser
 } = require("./helpers.js");
 
 const urlDatabase = {
@@ -90,11 +92,15 @@ app.post("/urls", (req, res) => {
     res.statusCode = 401;
     return res.end("You are not logged in");
   } 
+
   // console.log(req.body);
   const longURL = req.body.longURL;
-  const shortURL = generateRandomString(6);
+  if (checkUserOwnLongURL(req.session.user_id, longURL, urlDatabase)) {
+    res.statusCode = 405;
+    return res.end("You already have a short URL for this long URL");
+  }
 
-  createShortURL(longURL, urlDatabase, req.session.user_id);
+  const shortURL = createShortURL(longURL, urlDatabase, req.session.user_id);
 
   return res.redirect("/urls/" + shortURL);
   
@@ -121,7 +127,9 @@ app.get("/urls/:shortURL", (req, res) => {
   return res.render("urls_show", templateVars);
     
 });
-
+app.post("/urls/:shortURL", (req, res) => {
+  return res.redirect(req.url);
+});
 app.post("/urls/:shortURL/delete", (req, res) => {
   if (!checkURLExist(req, urlDatabase)) {
     res.statusCode = 404;
@@ -138,6 +146,10 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 });
 
 app.post("/urls/:shortURL/edit", (req, res) => {
+  if (!req.body.newURL) {
+    res.statusCode = 400;
+    return res.end("You need to enter a new short URL");
+  }
   if (!checkURLExist(req, urlDatabase)) {
     res.statusCode = 404;
     return res.end("This shortened URL is not registered");
@@ -146,13 +158,11 @@ app.post("/urls/:shortURL/edit", (req, res) => {
     res.statusCode = 401;
     return res.end("You do not own this short URL");
   }
-  
-  const existingLongURL = urlDatabase[req.params.shortURL].longURL; 
-  urlDatabase[req.body.newURL] = {
-    longURL: existingLongURL,
-    userID: req.session.user_id
-  };
-  delete urlDatabase[req.params.shortURL]
+  if (checkUserOwnShortURL(req, urlDatabase, req.body.newURL)) {
+    res.statusCode = 405;
+    return res.end("You already have this short URL for a different long URL");
+  }
+   editShortURL(req.params.shortURL, urlDatabase, req.session.user_id, req.body.newURL);
   // console.log(urlDatabase);
   return res.redirect("/urls");
     
@@ -165,24 +175,23 @@ app.get("/u/:shortURL", (req,res) => {
 
 app.get("/login", (req, res) => {
   // console.log(users);
-  const email = getUserEmail(users, req);
+  // const email = getUserEmail(users, req);
   const templateVars = {
-    shortURL: req.params.shortURL, 
-    // longURL: urlDatabase[req.params.shortURL].longURL,
-    longURL: undefined,
-    username: email
+    username: undefined
   };
   res.render("login", templateVars);
 });
 
 app.post("/login", (req, res) => {
-  console.log("users", users);
+  // console.log("users", users);
   const user = getUserByEmail(req.body.email, users);
   if (!user) {
+    console.log("User does not exist");
     res.statusCode = 403;
     return res.end("User email and password does not match");
   }
   if (!bcrypt.compareSync(req.body.password, user.password)) {
+    console.log("Wrong password");
     res.statusCode = 403;
     return res.end("User email and password does not match");
   }
@@ -196,54 +205,40 @@ app.post("/logout", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
-  const email = getUserEmail(users, req);
+  if (checkLoggedIn(req, users)) {
+    res.statusCode = 403;
+    return res.end("Can't register while logged in!");
+  }
   const templateVars = {
-    shortURL: req.params.shortURL, 
-    longURL: undefined,
-    username: email
+    username: undefined
   };
-  res.render("register", templateVars);
+  return res.render("register", templateVars);
 });
 
 app.post("/register", (req, res) => {
-  
+  if (checkLoggedIn(req, users)) {
+    res.statusCode = 403;
+    return res.end("Can't register while logged in");
+  }
   if (req.body.email === "") {
     res.statusCode = 400;
-    res.end("You need to enter an email");
-  } else if (req.body.password === "") {
+    return res.end("You need to enter an email");
+  } 
+  if (req.body.password === "") {
     res.statusCode = 400;
-    res.end("You need to enter an password");
-  } else if (checkUserExistFromEmail(req.body.email, users)) {
+    return res.end("You need to enter an password");
+  } 
+  if (checkUserExistFromEmail(req.body.email, users)) {
     res.statusCode = 400;
-    res.end("User already exists");
-  } else {
-    const userRandomID = generateRandomString(6);
-    users[userRandomID] = {
-      id: userRandomID,
-      email: req.body.email,
-      password: bcrypt.hashSync(req.body.password, 10)
-    };
-    req.session.user_id = userRandomID;
-    res.redirect("/urls");
-  }
+    return res.end("User already exists");
+  } 
+
+  req.session.user_id = createNewUser(req.body.email, req.body.password, users);
+  return res.redirect("/urls");
+  
 });
 
-// app.get("/urls.json", (req, res) => {
-//   res.json(urlDatabase);
-// });
-// app.get("/hello", (req, res) => {
-//   res.send("<html><body>Hello <b>World</b></body></html>\n");
-// });
-
-// app.get("/set", (req, res) => {
-//   const a = 1;
-//   res.send(`a = ${a}`);
-//  });
- 
-//  app.get("/fetch", (req, res) => {
-//   res.send(`a = ${a}`);
-//  });
 
 app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}!`);
+  console.log(`Tiny app listening on port ${PORT}!`);
 });
