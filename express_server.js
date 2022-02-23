@@ -35,7 +35,8 @@ const {
   checkLoggedIn,
   getUserURLs,
   checkUserOwnShortURL,
-  checkURLExist
+  checkURLExist,
+  getUserByEmail
 } = require("./helpers.js");
 
 
@@ -187,21 +188,17 @@ app.get("/login", (req, res) => {
 
 app.post("/login", (req, res) => {
   console.log("users", users);
-  if (checkUserExistFromEmail(req.body.email, users) ){
-    const userId = getUserIdFromEmail(req.body.email, users);
-    if (bcrypt.compareSync(req.body.password, users[userId].password)) {
-      req.session.user_id = userId;
-    } else {
-      res.statusCode = 403;
-      res.end("User email and password does not match");
-    }
-  } else {
+  const user = getUserByEmail(req.body.email, users);
+  if (!user) {
     res.statusCode = 403;
-    res.end("User email and password does not match");
+    return res.end("User email and password does not match");
   }
-  
-  
-  res.redirect("/urls");
+  if (!bcrypt.compareSync(req.body.password, user.password)) {
+    res.statusCode = 403;
+    return res.end("User email and password does not match");
+  }
+  req.session.user_id = user.id;  
+  return res.redirect("/urls");
 });
 
 app.post("/logout", (req, res) => {

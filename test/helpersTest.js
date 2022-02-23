@@ -1,6 +1,6 @@
 const { assert } = require('chai');
 
-const { getUserIdFromEmail } = require('../helpers.js');
+const { getUserByEmail }= require('../helpers.js');
 
 const testUsers = {
   "userRandomID": {
@@ -15,15 +15,15 @@ const testUsers = {
   }
 };
 
-describe('getUserIdFromEmail', function() {
+describe('getUserByEmail', function() {
   it('should return a user with valid email', function() {
-    const user = getUserIdFromEmail("user@example.com", testUsers)
+    const user = getUserByEmail("user@example.com", testUsers)
     const expectedUserID = "userRandomID";
     // Write your assert statement here
-    assert.equal(user, expectedUserID);
+    assert.equal(user, testUsers[expectedUserID]);
   });
   it ("should return undefined if given non-existent email", () => {
-    const user = getUserIdFromEmail("user3@example.com", testUsers)
+    const user = getUserByEmail("user3@example.com", testUsers)
     // Write your assert statement here
     assert.equal(user, undefined);
   });

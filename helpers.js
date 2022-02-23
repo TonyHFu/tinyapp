@@ -35,6 +35,16 @@ const getUserIdFromEmail = (email, users) => {
   return undefined;
 };
 
+const getUserByEmail = (email, users) => {
+  for (let user in users) {
+    if (users[user].email === email) {
+      return users[user];
+    }
+  }
+  return undefined;
+}
+
+
 const checkLoggedIn = (req, users) => {
   return Object.keys(users).includes(req.session.user_id);
 };
@@ -68,5 +78,6 @@ module.exports = {
   checkLoggedIn,
   getUserURLs,
   checkUserOwnShortURL,
-  checkURLExist
+  checkURLExist,
+  getUserByEmail
 }
