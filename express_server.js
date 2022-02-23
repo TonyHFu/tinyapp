@@ -153,7 +153,7 @@ app.post("/urls/:shortURL/edit", (req, res) => {
       const existingLongURL = urlDatabase[req.params.shortURL].longURL; 
       urlDatabase[req.body.newURL] = {
         longURL: existingLongURL,
-        userID: req.cookies["user_id"]
+        userID: req.session.user_id
       };
       delete urlDatabase[req.params.shortURL]
       // console.log(urlDatabase);
@@ -193,11 +193,11 @@ app.post("/login", (req, res) => {
       req.session.user_id = userId;
     } else {
       res.statusCode = 403;
-      res.end("Password does not match");
+      res.end("User email and password does not match");
     }
   } else {
     res.statusCode = 403;
-    res.end("User email does not exist")
+    res.end("User email and password does not match");
   }
   
   

@@ -1,6 +1,3 @@
-
-
-
 function generateRandomString(nums) {
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let randomString = '';
@@ -35,7 +32,7 @@ const getUserIdFromEmail = (email, users) => {
       return user;
     }
   }
-  return false;
+  return undefined;
 };
 
 const checkLoggedIn = (req, users) => {
