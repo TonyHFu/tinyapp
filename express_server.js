@@ -11,7 +11,6 @@ const {
   generateRandomString,
   getUserEmail,
   checkUserExistFromEmail,
-  getUserIdFromEmail,
   checkLoggedIn,
   getUserURLs,
   checkUserOwnShortURL,
