@@ -207,6 +207,7 @@ app.post("/login", (req, res) => {
   // console.log("users", users);
   const user = getUserByEmail(req.body.email, users);
   if (!user) {
+    console.log(req.body.email);
     console.log("User does not exist");
     res.statusCode = 403;
     return res.end("User email and password does not match");
@@ -221,14 +222,15 @@ app.post("/login", (req, res) => {
 });
 
 app.post("/logout", (req, res) => {
-  req.session.user_id = null;
+  delete req.session.user_id;
   res.redirect("/urls");
 });
 
 app.get("/register", (req, res) => {
   if (checkLoggedIn(req, users)) {
+    console.log("You must logout to do this");
     res.statusCode = 403;
-    return res.end("Can't register while logged in!");
+    return res.redirect("/urls");
   }
   const templateVars = {
     username: undefined
@@ -245,14 +247,15 @@ app.post("/register", (req, res) => {
     res.statusCode = 400;
     return res.end("You need to enter an email");
   } 
-  if (req.body.password === "") {
-    res.statusCode = 400;
-    return res.end("You need to enter an password");
-  } 
   if (checkUserExistFromEmail(req.body.email, users)) {
     res.statusCode = 400;
     return res.end("User already exists");
   } 
+  if (req.body.password === "") {
+    res.statusCode = 400;
+    return res.end("You need to enter an password");
+  } 
+  
 
   req.session.user_id = createNewUser(req.body.email, req.body.password, users);
   return res.redirect("/urls");
