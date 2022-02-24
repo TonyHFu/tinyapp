@@ -159,6 +159,14 @@ app.post("/urls/:shortURL", (req, res) => {
     res.statusCode = 400;
     return res.end("You need to enter a new short URL");
   }
+  if (checkUserOwnShortURL(req, urlDatabase, req.body.newURL)) {
+    res.statusCode = 405;
+    return res.end("You already have this short URL for a different long URL");
+  }
+  if (checkURLExist(req.body.newURL, urlDatabase)) {
+    res.statusCode = 401;
+    return res.end("This short URL is already registered");
+  }
   if (!checkURLExist(req.params.shortURL, urlDatabase)) {
     res.statusCode = 404;
     return res.end("This shortened URL is not registered");
@@ -167,10 +175,7 @@ app.post("/urls/:shortURL", (req, res) => {
     res.statusCode = 401;
     return res.end("You do not own this short URL");
   }
-  if (checkUserOwnShortURL(req, urlDatabase, req.body.newURL)) {
-    res.statusCode = 405;
-    return res.end("You already have this short URL for a different long URL");
-  }
+  
   editShortURL(req.params.shortURL, urlDatabase, req.session.user_id, req.body.newURL);
   // console.log(urlDatabase);
   return res.redirect("/urls");
