@@ -181,15 +181,20 @@ app.get("/u/:shortURL", (req,res) => {
     req.session.visitor_id = generateRandomString(6);
   }
   const updateVisits = (shortURL, urlDatabase, visitor_id) => {
-    urlDatabase[shortURL].visits ++;
+    let visitTime = new Date();
+    visitTime = visitTime.toUTCString();
+    urlDatabase[shortURL].visits.push({
+      visitor_id,
+      visitTime
+    });
     if (!urlDatabase[shortURL].visitors[visitor_id]) {
       urlDatabase[shortURL].visitors[visitor_id] = {
         visitor_id,
-        visits: 1
+        visits: [visitTime]
       };
     } else {
-      urlDatabase[shortURL].visitors[visitor_id].visits ++;
-    }    
+      urlDatabase[shortURL].visitors[visitor_id].visits.push(visitTime);
+    }
     return urlDatabase[shortURL].visits;
   };
   const longURL = urlDatabase[req.params.shortURL].longURL;
@@ -259,7 +264,7 @@ app.post("/register", (req, res) => {
   } 
   if (req.body.password === "") {
     res.statusCode = 400;
-    return res.end("You need to enter an password");
+    return res.end("You need to enter a password");
   } 
   
 

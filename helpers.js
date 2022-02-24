@@ -83,7 +83,7 @@ const createShortURL = (longURL, urlDatabase, user_id) => {
   urlDatabase[shortURL] = {
     longURL: longURL,
     userID: user_id,
-    visits: 0,
+    visits: [],
     visitors: {}
   };
   

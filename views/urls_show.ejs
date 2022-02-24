@@ -14,7 +14,7 @@
       <div class="card-body">
         <h5 class="card-title">TinyURL for: <%= longURL %></h5>
         <p class="card-text">Short URL: <a href="/u/<%= shortURL %>"><%= shortURL %></a></p>
-        <p class="card-text">Total visits: <%= visits %></p>
+        <p class="card-text">Total visits: <%= visits.length %></p>
         <p class="card-text">Unique visitors: <%= Object.keys(visitors).length %></p>
         <form method="POST" action="/urls/<%= shortURL %>?_method=PUT">
           <h5>Edit</h5>
@@ -22,8 +22,24 @@
             <input name="newURL" placeholder="New URL">
             <button class="btn btn-primary" type="submit">Submit</button>
           </p>
-
         </form>
+        <h3>Visits</h3>
+        <table class="table">
+          <thread>
+            <tr>
+              <th scope="col">Date and Time</th>
+              <th scope="col">Visitor ID</th>
+            </tr>
+          </thread>
+          <tbody>
+            <% for (let visit of visits) { %>
+              <tr>
+                <td><%= visit.visitTime %></td>
+                <td><%= visit.visitor_id %></td>
+              </tr>
+            <% } %>
+          </tbody>
+        </table>
       </div>
     <div class="card-footer text-muted"></div>
   </div>
