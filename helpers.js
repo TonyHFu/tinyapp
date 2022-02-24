@@ -1,11 +1,12 @@
 const bcrypt = require('bcryptjs');
 
 function generateRandomString(nums) {
+  //generates num length random alphanumerical string. Uses 1 extra boolean letterCase to determine letter casing.  
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let randomString = '';
   for (let i = 0; i < nums; i++) {
     const letterCase = Math.round(Math.random());
-    const randomLetter = alphabet[Math.floor(Math.random() * 36)];
+    const randomLetter = alphabet[Math.floor(Math.random() * alphabet.length)];
     if (letterCase) {
       randomString += randomLetter.toLowerCase();
     } else {
@@ -15,8 +16,8 @@ function generateRandomString(nums) {
   return randomString;
 };
 
-function getUserEmail(users, req) {
-  return users[req.session.user_id] ? users[req.session.user_id].email : undefined;
+function getUserEmail(users, user_id) {
+  return users[user_id] ? users[user_id].email : undefined;
 };
 
 const checkUserExistFromEmail = (email, users) => {
@@ -47,8 +48,8 @@ const getUserByEmail = (email, users) => {
 }
 
 
-const checkLoggedIn = (req, users) => {
-  return Object.keys(users).includes(req.session.user_id);
+const checkLoggedIn = (user_id, users) => {
+  return Object.keys(users).includes(user_id);
 };
 
 const getUserURLs = (user_id, urlDatabase) => {
@@ -64,11 +65,11 @@ const getUserURLs = (user_id, urlDatabase) => {
   return userURLs;
 };
 
-const checkUserOwnShortURL = (req, urlDatabase, shortURL) => {
+const checkUserOwnShortURL = (user_id, urlDatabase, shortURL) => {
   if (! (shortURL in urlDatabase)) {
     return false;
   }
- return urlDatabase[shortURL].userID === req.session.user_id;
+ return urlDatabase[shortURL].userID === user_id;
 };
 
 const checkURLExist = (shortURL, urlDatabase) => {
@@ -126,6 +127,24 @@ const parseLongURL = (longURL) => {
   return "http://" + longURL;
 };
 
+const updateVisits = (shortURL, urlDatabase, visitor_id) => {
+  let visitTime = new Date();
+  visitTime = visitTime.toUTCString();
+  urlDatabase[shortURL].visits.push({
+    visitor_id,
+    visitTime
+  });
+  if (!urlDatabase[shortURL].visitors[visitor_id]) {
+    urlDatabase[shortURL].visitors[visitor_id] = {
+      visitor_id,
+      visits: [visitTime]
+    };
+  } else {
+    urlDatabase[shortURL].visitors[visitor_id].visits.push(visitTime);
+  }
+  return urlDatabase[shortURL].visits;
+};
+
 module.exports = {
   generateRandomString,
   getUserEmail,
@@ -140,5 +159,6 @@ module.exports = {
   checkUserOwnLongURL,
   editShortURL,
   createNewUser,
-  parseLongURL
+  parseLongURL,
+  updateVisits
 }
