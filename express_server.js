@@ -4,6 +4,8 @@ const bodyParser = require("body-parser");
 const morgan = require("morgan");
 const cookieSession = require('cookie-session')
 const bcrypt = require('bcryptjs');
+const methodOverride = require('method-override');
+
 
 const {
   generateRandomString,
@@ -55,6 +57,7 @@ app.use(cookieSession({
   keys: ["This is for tinyapp from LHL"],
   maxAge: 24 * 60 * 60 * 1000 
 }));
+app.use(methodOverride('_method'));
 
 
 app.get("/", (req, res) => {
@@ -139,7 +142,7 @@ app.get("/urls/:shortURL", (req, res) => {
     
 });
 
-app.post("/urls/:shortURL/delete", (req, res) => {
+app.delete("/urls/:shortURL", (req, res) => {
   if (!checkURLExist(req.params.shortURL, urlDatabase)) {
     res.statusCode = 404;
     return res.end("This shortened URL is not registered");
@@ -154,7 +157,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
     
 });
 
-app.post("/urls/:shortURL", (req, res) => {
+app.put("/urls/:shortURL", (req, res) => {
   if (!req.body.newURL) {
     res.statusCode = 400;
     return res.end("You need to enter a new short URL");
