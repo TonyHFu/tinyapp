@@ -15,6 +15,7 @@
         <h5 class="card-title">TinyURL for: <%= longURL %></h5>
         <p class="card-text">Short URL: <a href="/u/<%= shortURL %>"><%= shortURL %></a></p>
         <p class="card-text">Total visits: <%= visits %></p>
+        <p class="card-text">Unique visitors: <%= Object.keys(visitors).length %></p>
         <form method="POST" action="/urls/<%= shortURL %>?_method=PUT">
           <h5>Edit</h5>
           <p>New URL

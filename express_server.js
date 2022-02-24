@@ -122,7 +122,8 @@ app.get("/urls/:shortURL", (req, res) => {
     shortURL: req.params.shortURL, 
     longURL: urlDatabase[req.params.shortURL].longURL,
     username: email,
-    visits: urlDatabase[req.params.shortURL].visits 
+    visits: urlDatabase[req.params.shortURL].visits,
+    visitors: urlDatabase[req.params.shortURL].visitors
   };
   return res.render("urls_show", templateVars);
     
@@ -176,12 +177,23 @@ app.get("/u/:shortURL", (req,res) => {
     res.statusCode = 404;
     return res.end("Sorry, this short URL is not registered");
   }
-  const updateVisits = (shortURL, urlDatabase) => {
+  if (!req.session.visitor_id) {
+    req.session.visitor_id = generateRandomString(6);
+  }
+  const updateVisits = (shortURL, urlDatabase, visitor_id) => {
     urlDatabase[shortURL].visits ++;
+    if (!urlDatabase[shortURL].visitors[visitor_id]) {
+      urlDatabase[shortURL].visitors[visitor_id] = {
+        visitor_id,
+        visits: 1
+      };
+    } else {
+      urlDatabase[shortURL].visitors[visitor_id].visits ++;
+    }    
     return urlDatabase[shortURL].visits;
   };
   const longURL = urlDatabase[req.params.shortURL].longURL;
-  updateVisits(req.params.shortURL, urlDatabase);
+  updateVisits(req.params.shortURL, urlDatabase, req.session.visitor_id);
   return res.redirect(longURL);
 });
 
