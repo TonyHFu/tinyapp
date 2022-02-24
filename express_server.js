@@ -23,24 +23,7 @@ const {
   createNewUser
 } = require("./helpers.js");
 
-const urlDatabase = {
-  "b2xVn2": {
-    longURL: "http://www.lighthouselabs.ca",
-    userID: "abcdef"
-  },
-  "9sm5xK": {
-    longURL: "http://www.google.com",
-    userID: "abcdef"
-  }
-};
-
-const users = {
-  "abcdef": {
-    id: "abcef",
-    email: "admin@me.com",
-    password: '$2a$10$8dSIPxTcar9ytSyN/TuUV.nct8sadHEi7ZfoLJ2jHwW1DxfduVT8q'
-  }
-};
+const {urlDatabase, users} = require("./data");
 
 const app = express();
 const PORT = 8080;
