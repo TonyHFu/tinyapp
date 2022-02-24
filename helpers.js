@@ -53,6 +53,7 @@ const checkLoggedIn = (user_id, users) => {
 };
 
 const getUserURLs = (user_id, urlDatabase) => {
+  //Returns sub-object of urlDatabase only belonging to user_id
   const userURLs = {};
   for (let shortURL in urlDatabase) {
     if (urlDatabase[shortURL].userID === user_id) {
@@ -87,9 +88,7 @@ const createShortURL = (longURL, urlDatabase, user_id) => {
     visits: [],
     visitors: {}
   };
-  
   return shortURL;
-  
 };
 
 const checkUserOwnLongURL = (user_id, longURL,  urlDatabase) => {
@@ -130,10 +129,12 @@ const parseLongURL = (longURL) => {
 const updateVisits = (shortURL, urlDatabase, visitor_id) => {
   let visitTime = new Date();
   visitTime = visitTime.toUTCString();
+  //visits is an array of objects containing visitor ID and visit time
   urlDatabase[shortURL].visits.push({
     visitor_id,
     visitTime
   });
+  //visitors is an object with keys visitor IDs that contain values visitor ID and and array of when that visitor ID visited the site. Able to more easily keep track of visitor-specific behaviour for future functionality
   if (!urlDatabase[shortURL].visitors[visitor_id]) {
     urlDatabase[shortURL].visitors[visitor_id] = {
       visitor_id,
