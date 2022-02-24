@@ -1,6 +1,6 @@
 const { assert } = require('chai');
 
-const { getUserByEmail }= require('../helpers.js');
+const { getUserByEmail, parseLongURL }= require('../helpers.js');
 
 const testUsers = {
   "userRandomID": {
@@ -26,5 +26,24 @@ describe('getUserByEmail', function() {
     const user = getUserByEmail("user3@example.com", testUsers)
     // Write your assert statement here
     assert.equal(user, undefined);
+  });
+});
+
+describe('parseLongURL', function() {
+  it('should return same URL if begins with http://', function() {
+    const longURL = "http://google.com";
+    const actual = parseLongURL(longURL);
+    assert.equal(actual, longURL);
+  });
+  it('should return same URL if begins with //', function() {
+    const longURL = "//google.com";
+    const actual = parseLongURL(longURL);
+    assert.equal(actual, longURL);
+  });
+  it('should return prepended URL if does not begin with http://', function() {
+    const longURL = "google.com";
+    const actual = parseLongURL(longURL);
+    const expected = "http://google.com";
+    assert.equal(actual, expected);
   });
 });

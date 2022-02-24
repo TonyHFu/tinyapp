@@ -117,6 +117,12 @@ const createNewUser = (email, password, users) => {
   };
   return userRandomID;
 };
+const parseLongURL = (longURL) => {
+  if (/^[(\/\/)(http:\/\/)]/.test(longURL)) {
+    return longURL;
+  }
+  return "http://" + longURL;
+};
 
 module.exports = {
   generateRandomString,
@@ -131,5 +137,6 @@ module.exports = {
   createShortURL,
   checkUserOwnLongURL,
   editShortURL,
-  createNewUser
+  createNewUser,
+  parseLongURL
 }

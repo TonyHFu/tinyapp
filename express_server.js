@@ -20,7 +20,8 @@ const {
   createShortURL,
   checkUserOwnLongURL,
   editShortURL,
-  createNewUser
+  createNewUser,
+  parseLongURL
 } = require("./helpers.js");
 
 const {urlDatabase, users} = require("./data");
@@ -85,7 +86,8 @@ app.post("/urls", (req, res) => {
   } 
 
   // console.log(req.body);
-  const longURL = req.body.longURL;
+  const longURL = parseLongURL(req.body.longURL);
+  
   if (checkUserOwnLongURL(req.session.user_id, longURL, urlDatabase)) {
     res.statusCode = 405;
     return res.end("You already have a short URL for this long URL");
