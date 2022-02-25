@@ -101,13 +101,8 @@ const checkUserOwnLongURL = (user_id, longURL,  urlDatabase) => {
   return false;
 };
 
-const editShortURL = (shortURL, urlDatabase, user_id, newURL) => {
-  const existingLongURL = urlDatabase[shortURL].longURL;
-  urlDatabase[newURL] = {
-    longURL: existingLongURL,
-    userID: user_id
-  };
-  delete urlDatabase[shortURL];
+const editShortURL = (shortURL, urlDatabase, newURL) => {
+  urlDatabase[shortURL].longURL = newURL;
 };
 
 const createNewUser = (email, password, users) => {

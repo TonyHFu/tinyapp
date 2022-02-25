@@ -137,15 +137,7 @@ app.delete("/urls/:shortURL", (req, res) => {
 app.put("/urls/:shortURL", (req, res) => {
   if (!req.body.newURL) {
     res.statusCode = 400;
-    return res.end("You need to enter a new short URL");
-  }
-  if (checkUserOwnShortURL(req.session.user_id, urlDatabase, req.body.newURL)) {
-    res.statusCode = 405;
-    return res.end("You already have this short URL for a different long URL");
-  }
-  if (checkURLExist(req.body.newURL, urlDatabase)) {
-    res.statusCode = 401;
-    return res.end("This short URL is already registered");
+    return res.end("You need to enter a new URL");
   }
   //If POST request was made outside browser
   if (!checkURLExist(req.params.shortURL, urlDatabase)) {
@@ -156,8 +148,8 @@ app.put("/urls/:shortURL", (req, res) => {
     res.statusCode = 401;
     return res.end("You do not own this short URL");
   }
-  
-  editShortURL(req.params.shortURL, urlDatabase, req.session.user_id, req.body.newURL);
+  const newURL = parseLongURL(req.body.newURL);
+  editShortURL(req.params.shortURL, urlDatabase, newURL);
 
   return res.redirect("/urls");
     
